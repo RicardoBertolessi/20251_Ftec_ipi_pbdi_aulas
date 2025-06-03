@@ -130,3 +130,80 @@ $$
 
 
 insert into tb_teste_trigger(texto) values('oi')
+
+
+
+
+-- Aula dia 03/06/2025
+
+drop table if exists tb_pessoa;
+create table if not exists tb_pessoa(
+    cod_pessoa serial primary key,
+    nome vaRCHAR(200) NOT NULL,
+    idade int not NULL,
+    saldo numeric(10,2) not null
+)
+
+
+drop table if exists tb_auditoria;
+create table if not exists tb_auditoria(
+    cod_auditoria serial primary key,
+    cod_pessoa int not NULL,
+    idade int not NULL,
+    saldo_antigo numeric (10,2),
+    saldo_atual numeric(10,2)
+)
+
+
+
+--trigger que nao permite valores negativos
+create or replace function fn_validador_de_saldo()
+returns TRIGGER
+language plpgsql as $$
+BEGIN
+    if new.saldo >= 0 THEN
+        return NEW;
+    ELSE
+        raise notice 'Valor de saldo R$% invalido',new saldo;
+        return NULL;
+    end if;
+end;
+$$
+
+
+create trigger tg_validador_de_saldo
+before insert or update on tb_pessoa
+for row
+execute function fn_validador_de_saldo();
+
+
+insert into tb_pessoa
+    (nome, idade, saldo) VALUES
+    ('João', 20, 100),
+    ('Pedro', 22, -100),
+    ('Maria', 22, 400);
+
+
+create or replace function fn_log_pessoa_insert()
+returns TRIGGER
+language plpgsql as $$
+BEGIN
+    insert into tb_auditoria
+    (cod_pessoa, nome, idade, saldo_antigo, saldo_atual)
+    VALUES
+    (new.cod_pessoa, new.nome, new.idade, new.saldo);
+    return null;
+end;
+$$
+
+
+
+create or replace function fn_log_pessoa_update()
+returns TRIGGER
+language plpgsql as $$
+BEGIN
+    insert into tb_auditoria
+    (cod_pessoa, nome, idade, saldo_antigo, saldo_atual)
+    
+end;
+$$
